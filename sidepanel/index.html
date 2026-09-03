@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>哔哩哔哩影子跟读</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">BILIBILI SHADOWING</p>
+          <h1>听清一句，跟上一句。</h1>
+        </div>
+      </header>
+
+      <section id="emptyState" class="empty-state">
+        <span class="empty-icon">▶</span>
+        <h2>打开一个哔哩哔哩视频</h2>
+        <p>插件会读取当前分P的播放器字幕，并切分成适合跟读的句子。</p>
+      </section>
+
+      <section id="practiceView" hidden>
+        <section id="videoContext" class="video-context">
+          <div class="context-summary-row">
+            <button id="videoContextToggle" class="context-toggle" type="button" aria-expanded="false" aria-controls="videoContextDetails">
+              <span id="contextSummaryMeta">等待字幕</span>
+              <span id="contextSummaryTitle">正在连接哔哩哔哩…</span>
+              <i aria-hidden="true">⌄</i>
+            </button>
+            <button id="reloadButton" class="compact-icon-button" type="button" title="重新读取当前分P" aria-label="重新读取当前分P">↻</button>
+          </div>
+          <div id="videoContextDetails" class="video-context-details" hidden>
+            <div class="video-meta">
+              <div class="video-copy">
+                <span id="languageBadge" class="language-badge">等待字幕</span>
+                <h2 id="videoTitle">正在连接哔哩哔哩…</h2>
+                <p id="videoStatus">等待播放器准备</p>
+              </div>
+              <button id="retryButton" class="secondary-button" type="button" hidden>重试</button>
+            </div>
+
+            <label id="subtitleTrackControl" class="subtitle-track-control" hidden>
+              <span>字幕语言</span>
+              <select id="subtitleTrackSelect" aria-label="字幕语言"></select>
+            </label>
+
+            <section id="subtitleDownloadControl" class="subtitle-download-control" hidden aria-labelledby="subtitleDownloadHeading">
+              <div class="download-heading">
+                <span id="subtitleDownloadHeading">下载字幕</span>
+                <small id="subtitleDownloadStatus" role="status" aria-live="polite"></small>
+              </div>
+              <div class="download-options">
+                <label>
+                  <span>内容</span>
+                  <select id="subtitleDownloadLayer" aria-label="下载字幕内容层级">
+                    <option value="sentence" selected>整理后完整句</option>
+                    <option value="cue">原始字幕 cue</option>
+                  </select>
+                </label>
+                <label>
+                  <span>格式</span>
+                  <select id="subtitleDownloadFormat" aria-label="下载字幕文件格式">
+                    <option value="srt" selected>SRT</option>
+                    <option value="txt">TXT</option>
+                    <option value="markdown">Markdown</option>
+                    <option value="json">JSON</option>
+                  </select>
+                </label>
+                <button id="subtitleDownloadButton" class="download-button" type="button" disabled>下载</button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <div id="viewTabs" class="view-tabs" role="tablist" aria-label="学习视图">
+          <button id="practiceViewTab" type="button" role="tab" aria-selected="true" aria-controls="practicePane" data-workspace-view="practice">专注练习</button>
+          <button id="captionsViewTab" type="button" role="tab" aria-selected="false" aria-controls="captionsPane" data-workspace-view="captions" disabled>字幕目录</button>
+        </div>
+
+        <div class="workspace">
+          <div id="practicePane" class="view-pane practice-pane" role="tabpanel" aria-labelledby="practiceViewTab">
+            <div id="loadingCard" class="loading-card" hidden>
+              <i></i>
+              <div><b>正在读取字幕</b><span>从当前分P获取带时间轴的字幕</span></div>
+            </div>
+
+            <section id="practiceCard" class="practice-card" hidden>
+              <div class="sentence-meta">
+                <span id="sentenceCounter">0 / 0</span>
+                <span id="chunkPosition" hidden></span>
+                <span id="sentenceTime">00:00 — 00:00</span>
+              </div>
+              <div class="sentence-scroll">
+                <p id="currentSentence" class="current-sentence">选择一句开始练习</p>
+              </div>
+
+              <div class="practice-settings">
+                <button id="practiceSettingsToggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="practiceSettingsPanel">
+                  <span>练习设置</span>
+                  <span id="practiceSettingsSummary">整句 · 连播 · 1×</span>
+                  <i aria-hidden="true">⌄</i>
+                </button>
+                <div id="practiceSettingsPanel" class="settings-panel" hidden>
+                  <div class="practice-options">
+                    <div class="option-row">
+                      <span>练习粒度</span>
+                      <div id="practiceGranularityControl" class="segmented-control two-up" role="group" aria-label="练习粒度">
+                        <button type="button" data-practice-granularity="sentence" aria-pressed="true">整句</button>
+                        <button type="button" data-practice-granularity="chunk" aria-pressed="false">分段</button>
+                      </div>
+                    </div>
+                    <div class="option-row">
+                      <span>播放模式</span>
+                      <div id="playbackModeControl" class="segmented-control" role="group" aria-label="播放模式">
+                        <button type="button" data-playback-mode="single" aria-pressed="false">单句</button>
+                        <button type="button" data-playback-mode="continuous" aria-pressed="true">连播</button>
+                        <button type="button" data-playback-mode="loop" aria-pressed="false">循环</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <label class="speed-control">
+                    <span>播放速度</span>
+                    <select id="speedSelect">
+                      <option value="0.5">0.5×</option>
+                      <option value="0.75">0.75×</option>
+                      <option value="1" selected>1.0×</option>
+                      <option value="1.25">1.25×</option>
+                      <option value="1.5">1.5×</option>
+                      <option value="2">2.0×</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div class="practice-dock">
+                <div class="progress-track" aria-hidden="true"><i id="sentenceProgress"></i></div>
+                <div class="transport-controls">
+                  <button id="previousButton" type="button" title="上一项（J）" aria-label="上一项">‹</button>
+                  <button id="playButton" class="play-button" type="button" title="播放或暂停（空格）" aria-label="播放或暂停">▶</button>
+                  <button id="nextButton" type="button" title="下一项（L）" aria-label="下一项">›</button>
+                </div>
+                <p class="shortcut-hint"><kbd>J</kbd> 上一项　<kbd>Space</kbd> 播放/暂停　<kbd>L</kbd> 下一项</p>
+              </div>
+            </section>
+          </div>
+
+          <div id="captionsPane" class="view-pane captions-pane" role="tabpanel" aria-labelledby="captionsViewTab" hidden>
+            <section id="captionSection" class="caption-section" hidden>
+              <div class="section-heading">
+                <div><p>字幕目录</p><h2>选择一句开始练习</h2></div>
+                <div class="caption-actions">
+                  <span id="captionCount">0 句</span>
+                  <button id="locateCurrentCaption" type="button">定位当前句</button>
+                </div>
+              </div>
+              <div id="captionList" class="caption-list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span id="connectionDot"></span>
+        <p id="footerStatus">等待哔哩哔哩页面</p>
+      </footer>
+    </main>
+    <script src="../core/bilibili.js"></script>
+    <script src="../core/playback-mode.js"></script>
+    <script src="../core/subtitle-export.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
